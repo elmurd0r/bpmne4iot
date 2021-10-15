@@ -79,6 +79,7 @@ listener.on('activity.start', (start) => {
 
 
 listener.on('activity.wait', (waitObj) => {
+  debugger;
   let sourceId = waitObj.content.inbound;
 
   let taskArr = bpmnViewer.get('elementRegistry').filter(element => is(element, "bpmn:Task"));
@@ -97,10 +98,6 @@ listener.on('activity.wait', (waitObj) => {
     let event = startEvent ? startEvent : catchEvent;
     const mathLoopCall = (businessObj, eventValue) => {
       let extensionElements = businessObj.get("extensionElements")?.values;
-      //let name = businessObj.get("extensionElements")?.values[0]?.values?.find(elem => elem.name === 'key')?.value;
-      //let mathOp = businessObj.get("extensionElements")?.values[0]?.values?.find(s => s.name === ">" || s.name === "<" || s.name === "=")?.name;
-      //let mathOpVal = businessObj.get("extensionElements")?.values[0]?.values?.find(s => s.name === ">" || s.name === "<" || s.name === "=")?.value;
-      //let timeout = businessObj.get("extensionElements")?.values[0]?.values?.find(elem => elem.name === 'timeout')?.value;
 
       // NEUE ELEMENTE:
       let name = extensionElements.filter(element => element['$type'] === 'iot:Properties')[0].values[0].key;
