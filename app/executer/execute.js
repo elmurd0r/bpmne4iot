@@ -15,6 +15,7 @@ const processModel = sessionStorage.getItem('xml') ? sessionStorage.getItem('xml
 const containerEl = document.getElementById('js-canvas');
 const runBtn = document.getElementById('runBtn');
 import {Timers} from "./Timer";
+import {TreeNode} from "./TreeNode";
 
 let start_t;
 let end_t;
@@ -79,7 +80,6 @@ listener.on('activity.start', (start) => {
 
 
 listener.on('activity.wait', (waitObj) => {
-  debugger;
   let sourceId = waitObj.content.inbound;
 
   let taskArr = bpmnViewer.get('elementRegistry').filter(element => is(element, "bpmn:Task"));
@@ -395,6 +395,71 @@ listener.on('activity.wait', (waitObj) => {
     })
   }
 
+  const extractedDecision = (iotInputs, workerArr) => {
+    iotInputs.forEach(input => {
+      let businessObj = getBusinessObject(input);
+
+      if (businessObj.type === 'sensor') {
+        workerArr.push(
+            pool.exec('sensorCall', [businessObj], {
+              on: payload => {
+                fillSidebarRightLog(payload.status);
+              }
+            }).then(result => {
+              console.log("Result:");
+              console.log(result);
+              if (result.value) {
+                waitObj.environment.variables[input.id] = result.value;
+              }
+              highlightElement(input, "rgba(66, 180, 21, 0.7)");
+              //return result;
+            }).catch(e => {
+              console.log(e);
+              highlightErrorElements(input, waitObj, "Not executed", e, "-", boundaryEventType);
+              throw e;
+            })
+        )
+      }
+      if (businessObj.type === 'sensor-sub') {
+        let execArray = [];
+        let values = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
+        values.forEach(value => {
+          if (value.url && value.key && value.name) {
+            let execElement = pool.exec('sensorCallGroup', [value.url, value.key, businessObj.id], {
+              on: payload => {
+                fillSidebarRightLog(payload.status);
+              }
+            }).then(result => {
+              console.log("Result:");
+              console.log(result);
+              if (result.value) {
+                waitObj.environment.variables[input.id] = {...waitObj.environment.variables[input.id], [value.name] : result.value };
+              }
+              highlightElement(input, "rgba(66, 180, 21, 0.7)");
+              return result;
+            }).catch(e => {
+              console.log(e);
+              highlightErrorElements(input, waitObj, "Not executed", e, "-", boundaryEventType);
+              throw e;
+            })
+            execArray.push(execElement);
+            workerArr.push(execElement);
+          } else {
+            console.log("SensorGroup: Key or URL incorrect / doesn't exist");
+          }
+        })
+        Promise.allSettled(execArray).then((values) => {
+          let rejected = values.filter(val => val.status === 'rejected');
+          if (rejected.length === 0) {
+            highlightElement(input, "rgba(66, 180, 21, 0.7)");
+          } else {
+            highlightErrorElements(input, waitObj, "Not executed", "ActorGroup error", "-", boundaryEventType);
+          }
+        });
+      }
+    })
+  }
+
   const extractedPromise = (workerArr) => {
     Promise.allSettled(workerArr).then((values) => {
       console.log(values);
@@ -405,24 +470,87 @@ listener.on('activity.wait', (waitObj) => {
     }).catch((e) => console.log(e));
   }
 
+  const getTreeResult = (treeNode) => {
+    let childrenPromises = [];
+    const workerArrDecision = [];
+
+    const extractedDecisionSeatteldPromise = () => {
+      return Promise.allSettled(workerArrDecision).then((values) => {
+        let rejected = values.filter(val => val.status === 'rejected');
+        if (rejected.length === 0) {
+          //successful
+          return new Promise(resolve => resolve("succsess"));
+        } else {
+          //fail
+          highlightErrorElements(treeNode.value, waitObj, "Not executed", "error", "-", []);
+          return new Promise((resolve, reject) => reject(new Error(id)));
+        }
+      })
+    }
+
+    let iotInputs = treeNode.value.children.map(input => {
+      if (input.businessObject.type === 'sensor' || input.businessObject.type === 'sensor-sub') {
+        return bpmnViewer.get('elementRegistry').find(element => element.id === input.id);
+      }
+    }).filter(e => e !== undefined);
+    console.log(iotInputs);
+
+
+    if(treeNode.descendants.length > 0) {
+      treeNode.descendants.forEach(x => {
+        childrenPromises.push(getTreeResult(x));
+      })
+      return Promise.allSettled(childrenPromises).then((values) => {
+        let rejected = values.filter(val => val.status === 'rejected');
+
+        if (rejected.length === 0) {
+          extractedDecision(iotInputs, workerArrDecision);
+          return extractedDecisionSeatteldPromise();
+        } else {
+          //fail
+          console.log("FAIL");
+          return new Promise((resolve,reject) => reject(new Error(id)));
+        }
+      });
+    } else {
+      extractedDecision(iotInputs, workerArrDecision);
+    }
+    return extractedDecisionSeatteldPromise();
+  }
+
   if(task) {
     const workerArr = [];
     let businessObj = getBusinessObject(task);
 
-    let iotInputs = businessObj.get("dataInputAssociations")?.map(input => {
-      if (input.sourceRef[0].type) {
+    let iotDecisionGroup = businessObj.get("dataInputAssociations")?.map(input => {
+      if (input.sourceRef[0].type && input.sourceRef[0].type === 'decision-group') {
         return bpmnViewer.get('elementRegistry').find(element => element.id === input.sourceRef[0].id);
-        //return input.sourceRef[0];
+      }
+    }).filter(e => e !== undefined);
+    let iotInputs = businessObj.get("dataInputAssociations")?.map(input => {
+      if (input.sourceRef[0].type && input.sourceRef[0].type !== 'decision-group') {
+        return bpmnViewer.get('elementRegistry').find(element => element.id === input.sourceRef[0].id);
       }
     }).filter(e => e !== undefined);
     let iotOutputs = businessObj.get("dataOutputAssociations")?.map(input => {
       if(input.targetRef.type) {
         return bpmnViewer.get('elementRegistry').find(element => element.id === input.targetRef.id);
-        //return input.targetRef;
       }
     }).filter(e => e !== undefined);
 
-    if(iotInputs.length === 0 && iotOutputs.length === 0){
+    if(iotDecisionGroup.length > 0) {
+      let x = createTree(iotDecisionGroup[0]);
+      //console.log(x);
+
+      getTreeResult(x).then((val) => {
+        //waitObj.signal();
+        // Nächste Schritt: Decision-Tab einfügen und die Bedingungen durchlaufen
+      }).catch(xy => {
+        engine.stop();
+      });
+    }
+
+    if(iotInputs.length === 0 && iotOutputs.length === 0 && iotDecisionGroup.length === 0){
       waitObj.signal();
     }
     if(iotInputs.length > 0 && iotOutputs.length === 0) {
@@ -442,8 +570,21 @@ listener.on('activity.wait', (waitObj) => {
       extractedPromise(workerArr);
     }
   }
+
 })
 
+const createTree = (shape) => {
+  let mainNode = new TreeNode(shape);
+
+  if(shape.children.length > 0) {
+    shape.children.forEach(childNode => {
+      if(childNode.type === 'bpmn:SubProcess') {
+        mainNode.descendants.push(createTree(childNode));
+      }
+    })
+  }
+  return mainNode;
+}
 
 listener.on('activity.end', (element)=>{
   end_t = new Date().getTime();
