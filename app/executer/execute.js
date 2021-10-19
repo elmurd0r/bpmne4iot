@@ -422,6 +422,7 @@ listener.on('activity.wait', (waitObj) => {
       }
       if (businessObj.type === 'sensor-sub') {
         let execArray = [];
+        waitObj.environment.variables[currentDecisionID] = {};
         let values = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
         values.forEach(value => {
           if (value.url && value.key && value.name) {
@@ -433,7 +434,7 @@ listener.on('activity.wait', (waitObj) => {
               console.log("Result:");
               console.log(result);
               if (result.value) {
-                waitObj.environment.variables[input.id] = {...waitObj.environment.variables[input.id], [value.name] : result.value };
+                waitObj.environment.variables[currentDecisionID][input.id] = {...waitObj.environment.variables[currentDecisionID][input.id], [value.name] : result.value };
               }
               highlightElement(input, "rgba(66, 180, 21, 0.7)");
               return result;
@@ -475,19 +476,22 @@ listener.on('activity.wait', (waitObj) => {
     let values = currentShape.businessObject.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
     values.forEach(value => {
       if (value.name && value.condition) {
-        let regex = /[a-zA-Z1-9.]*[.][a-zA-Z1-9]*/gm;
+        let regex = /[a-zA-Z0-9.]*[.][a-zA-Z0-9]*/gm;
         let stringForRegex = value.condition;
         let parsedVariableArray = stringForRegex.match(regex);
 
         let replacedArray = parsedVariableArray.map((str) => {
-          let splitedString = str.split(".");
-          return "waitObj['environment']['variables']['" + splitedString[0] +"']['"+ splitedString[1] +"']";
+          let partElement = "";
+          let keyArr = str.split('.');
+          keyArr.forEach(k => {
+            partElement += "['"+k+"']";
+          });
+          return "waitObj['environment']['variables']"+partElement;
         })
 
         replacedArray.forEach((match, groupIndex) => {
-          stringForRegex = stringForRegex.replace( /[a-zA-Z1-9.]*[.][a-zA-Z1-9]*/, match);
+          stringForRegex = stringForRegex.replace( /[a-zA-Z0-9.]*[.][a-zA-Z0-9]*/, match);
         })
-        console.log(eval(stringForRegex));
         waitObj.environment.variables[currentShape.id] = {...waitObj.environment.variables[currentShape.id], [value.name] : eval(stringForRegex) };
       }
     })
@@ -765,10 +769,17 @@ function fillSidebar(state, name, id, time, timeStamp,type, errormsg, source) {
 const addOverlaysDecision = (elem, states) => {
   let values = elem.businessObject.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
   let valuesName = values.map(val => val.name);
-
   let spanStates="";
+
   for (const [key, value] of Object.entries(states)) {
-    spanStates = spanStates + `<li class="list-group-item ${valuesName.includes(key) ? 'item-active' : ''}">${key}: ${value}</li>`;
+    if(typeof value == "object") {
+      for (const [_key, _value] of Object.entries(value)) {
+        spanStates = spanStates + `<li class="list-group-item ${valuesName.includes(_key) ? 'item-active' : ''}">${key + '.' + _key}: ${_value}</li>`;
+      }
+    } else {
+      spanStates = spanStates + `<li class="list-group-item ${valuesName.includes(key) ? 'item-active' : ''}">${key}: ${value}</li>`;
+    }
+
   }
   overlays.add(elem, {
     html: `<div class="decision-overlay">Decision<ul class="tooltiptext">${spanStates}</ul></div>`,
