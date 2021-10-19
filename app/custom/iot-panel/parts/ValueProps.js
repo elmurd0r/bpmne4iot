@@ -57,13 +57,13 @@ export default function(group, element, bpmnFactory, translate) {
             modelProperties: modelProps,
             labels: labels,
 
-            getParent: function(element, node, bo) {
+            getParent: function (element, node, bo) {
                 return bo.extensionElements;
             },
 
-            createParent: function(element, bo) {
-                let parent = elementHelper.createElement('bpmn:ExtensionElements', { values: [] }, bo, bpmnFactory);
-                let cmd = cmdHelper.updateBusinessObject(element, bo, { extensionElements: parent });
+            createParent: function (element, bo) {
+                let parent = elementHelper.createElement('bpmn:ExtensionElements', {values: []}, bo, bpmnFactory);
+                let cmd = cmdHelper.updateBusinessObject(element, bo, {extensionElements: parent});
                 return {
                     cmd: cmd,
                     parent: parent
@@ -74,6 +74,42 @@ export default function(group, element, bpmnFactory, translate) {
         if (propertiesEntry) {
             group.entries.push(propertiesEntry);
         }
+    }
+
+    // --------------------------------------------------------------------
+    // Decision-Group area
+
+    if(iotType === 'decision-group') {
+        modelProps = [ 'condition', 'name'];
+        labels = [ translate('Condition'), translate('Name')];
+    }
+
+    if ((is(element, 'bpmn:SubProcess')) && !isNil(iotType)) {
+        let propertiesEntry = properties(iotType, element, bpmnFactory, {
+            id: 'IoTproperties',
+            modelProperties: modelProps,
+            labels: labels,
+
+            getParent: function (element, node, bo) {
+                return bo.extensionElements;
+            },
+
+            createParent: function (element, bo) {
+                let parent = elementHelper.createElement('bpmn:ExtensionElements', {values: []}, bo, bpmnFactory);
+                let cmd = cmdHelper.updateBusinessObject(element, bo, {extensionElements: parent});
+                return {
+                    cmd: cmd,
+                    parent: parent
+                };
+            }
+        }, translate);
+
+        if (propertiesEntry) {
+            group.entries.push(propertiesEntry);
+        }
+
+    }
+
 
         // Hinzufügen einer checkBox
         /* group.entries.push(entryFactory.checkbox(translate, {
@@ -208,7 +244,6 @@ export default function(group, element, bpmnFactory, translate) {
             //labels: ['Decision', 'Result'],
         }));
         */
-    }
 }
 
 function getIotType(element) {

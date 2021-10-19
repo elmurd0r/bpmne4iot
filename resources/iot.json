@@ -140,6 +140,16 @@
           "name": "timeout",
           "type": "String",
           "isAttr": true
+        },
+        {
+          "name": "condition",
+          "type": "String",
+          "isAttr": true
+        },
+        {
+          "name": "result",
+          "type": "String",
+          "isAttr": true
         }
       ]
     }

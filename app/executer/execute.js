@@ -395,7 +395,7 @@ listener.on('activity.wait', (waitObj) => {
     })
   }
 
-  const extractedDecision = (iotInputs, workerArr) => {
+  const extractedDecision = (iotInputs, workerArr, currentDecisionID) => {
     iotInputs.forEach(input => {
       let businessObj = getBusinessObject(input);
 
@@ -409,7 +409,7 @@ listener.on('activity.wait', (waitObj) => {
               console.log("Result:");
               console.log(result);
               if (result.value) {
-                waitObj.environment.variables[input.id] = result.value;
+                waitObj.environment.variables[currentDecisionID] = {...waitObj.environment.variables[currentDecisionID], [input.id] : result.value };
               }
               highlightElement(input, "rgba(66, 180, 21, 0.7)");
               //return result;
@@ -470,6 +470,30 @@ listener.on('activity.wait', (waitObj) => {
     }).catch((e) => console.log(e));
   }
 
+  const evalDecision = (currentShape) => {
+    console.log(currentShape);
+    let values = currentShape.businessObject.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
+    values.forEach(value => {
+      if (value.name && value.condition) {
+        let regex = /[a-zA-Z1-9.]*[.][a-zA-Z1-9]*/gm;
+        let stringForRegex = value.condition;
+        let parsedVariableArray = stringForRegex.match(regex);
+
+        let replacedArray = parsedVariableArray.map((str) => {
+          let splitedString = str.split(".");
+          return "waitObj['environment']['variables']['" + splitedString[0] +"']['"+ splitedString[1] +"']";
+        })
+
+        replacedArray.forEach((match, groupIndex) => {
+          stringForRegex = stringForRegex.replace( /[a-zA-Z1-9.]*[.][a-zA-Z1-9]*/, match);
+        })
+        console.log(eval(stringForRegex));
+        waitObj.environment.variables[currentShape.id] = {...waitObj.environment.variables[currentShape.id], [value.name] : eval(stringForRegex) };
+      }
+    })
+    return waitObj.environment.variables[currentShape.id];
+  }
+
   const getTreeResult = (treeNode) => {
     let childrenPromises = [];
     const workerArrDecision = [];
@@ -479,6 +503,9 @@ listener.on('activity.wait', (waitObj) => {
         let rejected = values.filter(val => val.status === 'rejected');
         if (rejected.length === 0) {
           //successful
+          let decisionResult = evalDecision(treeNode.value);
+          addOverlaysDecision(treeNode.value, decisionResult);
+          highlightElement(treeNode.value, "rgba(66, 180, 21, 0.7)");
           return new Promise(resolve => resolve("succsess"));
         } else {
           //fail
@@ -493,9 +520,6 @@ listener.on('activity.wait', (waitObj) => {
         return bpmnViewer.get('elementRegistry').find(element => element.id === input.id);
       }
     }).filter(e => e !== undefined);
-    console.log(iotInputs);
-
-
     if(treeNode.descendants.length > 0) {
       treeNode.descendants.forEach(x => {
         childrenPromises.push(getTreeResult(x));
@@ -504,7 +528,7 @@ listener.on('activity.wait', (waitObj) => {
         let rejected = values.filter(val => val.status === 'rejected');
 
         if (rejected.length === 0) {
-          extractedDecision(iotInputs, workerArrDecision);
+          extractedDecision(iotInputs, workerArrDecision, treeNode.value.id);
           return extractedDecisionSeatteldPromise();
         } else {
           //fail
@@ -513,7 +537,7 @@ listener.on('activity.wait', (waitObj) => {
         }
       });
     } else {
-      extractedDecision(iotInputs, workerArrDecision);
+      extractedDecision(iotInputs, workerArrDecision, treeNode.value.id);
     }
     return extractedDecisionSeatteldPromise();
   }
@@ -543,8 +567,7 @@ listener.on('activity.wait', (waitObj) => {
       //console.log(x);
 
       getTreeResult(x).then((val) => {
-        //waitObj.signal();
-        // Nächste Schritt: Decision-Tab einfügen und die Bedingungen durchlaufen
+        waitObj.signal();
       }).catch(xy => {
         engine.stop();
       });
@@ -593,15 +616,12 @@ listener.on('activity.end', (element)=>{
   console.log("EXECUTION TIME: "+ time);
   fillSidebarRightLog("EXECUTION TIME: " + time + " ms");
 
-
-  let endEventArr = bpmnViewer.get('elementRegistry').filter(element => is(element, "bpmn:EndEvent"));
-  let endEvent = endEventArr.find(endEvent => endEvent.id === element.id);
   let currentElement = bpmnViewer.get('elementRegistry').find((elem)=>elem.id === element.id);
+  let businessObj = getBusinessObject(currentElement) ? getBusinessObject(currentElement) : null;
   let timeStamp = timestampToDate(element.messageProperties.timestamp);
-  let businessObj = getBusinessObject(endEvent) ? getBusinessObject(endEvent) : null;
   let obj = element.content.inbound;
 
-  if(endEvent && businessObj?.type === 'end') {
+  if(businessObj?.type === 'end') {
     const workerArr = [];
     workerArr.push(
       pool.exec('actorCall', [businessObj], {
@@ -627,9 +647,11 @@ listener.on('activity.end', (element)=>{
       })
     )
   } else {
-    highlightElement(currentElement, "rgba(66, 180, 21, 0.7)");
-    addOverlays(currentElement, time);
-    fillSidebar(confirmIcon, element.name, element.id, time, timeStamp, element.type, "-", obj ? obj[0].sourceId : '-');
+    if(businessObj?.type !== 'decision-group') {
+      highlightElement(currentElement, "rgba(66, 180, 21, 0.7)");
+      addOverlays(currentElement, time);
+      fillSidebar(confirmIcon, element.name, element.id, time, timeStamp, element.type, "-", obj ? obj[0].sourceId : '-');
+    }
   }
 
   // -----------------
@@ -739,6 +761,23 @@ function fillSidebar(state, name, id, time, timeStamp,type, errormsg, source) {
   executionTimeCell.innerHTML = time/1000 + " s";
   errorMsgCell.innerHTML = errormsg;
 }
+
+const addOverlaysDecision = (elem, states) => {
+  let values = elem.businessObject.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
+  let valuesName = values.map(val => val.name);
+
+  let spanStates="";
+  for (const [key, value] of Object.entries(states)) {
+    spanStates = spanStates + `<li class="list-group-item ${valuesName.includes(key) ? 'item-active' : ''}">${key}: ${value}</li>`;
+  }
+  overlays.add(elem, {
+    html: `<div class="decision-overlay">Decision<ul class="tooltiptext">${spanStates}</ul></div>`,
+    position: {
+      left: 0,
+      top:0
+    }
+  });
+};
 
 
 const addOverlays = (elem, time) => {

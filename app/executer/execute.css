@@ -42,6 +42,38 @@ a:link {
     font-weight: bold;
 }
 
+.decision-overlay .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+}
+
+.item-active {
+    background-color: rgba(255, 242, 0, 0.89);
+}
+
+
+.decision-overlay:hover .tooltiptext {
+    visibility: visible;
+}
+.decision-overlay {
+    background-color: rgba(255, 242, 0, 0.89);
+    color: Black;
+    border-radius: 5px;
+    font-family: Arial;
+    font-size: 12px;
+    padding: 5px;
+    text-align: center;
+    width: 120%;
+}
+
 
 .overlay {
     background-color: rgba(255,165,0, 0.7);
