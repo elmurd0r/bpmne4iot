@@ -476,7 +476,7 @@ listener.on('activity.wait', (waitObj) => {
     let values = currentShape.businessObject.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
     values.forEach(value => {
       if (value.name && value.condition) {
-        let regex = /[a-zA-Z0-9.]*[.][a-zA-Z0-9]*/gm;
+        let regex = /[a-zA-Z0-9_\-]*[.][a-zA-Z0-9_\-]*/gm;
         let stringForRegex = value.condition;
         let parsedVariableArray = stringForRegex.match(regex);
 
@@ -490,7 +490,7 @@ listener.on('activity.wait', (waitObj) => {
         })
 
         replacedArray.forEach((match, groupIndex) => {
-          stringForRegex = stringForRegex.replace( /[a-zA-Z0-9.]*[.][a-zA-Z0-9]*/, match);
+          stringForRegex = stringForRegex.replace( /[a-zA-Z0-9_\-]*[.][a-zA-Z0-9_\-]*/, match);
         })
         waitObj.environment.variables[currentShape.id] = {...waitObj.environment.variables[currentShape.id], [value.name] : eval(stringForRegex) };
       }

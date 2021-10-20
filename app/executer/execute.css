@@ -44,7 +44,7 @@ a:link {
 
 .decision-overlay .tooltiptext {
     visibility: hidden;
-    width: 160px;
+    white-space: nowrap;
     color: #fff;
     text-align: center;
     border-radius: 6px;
