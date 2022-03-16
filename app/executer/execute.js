@@ -439,11 +439,13 @@ listener.on('activity.wait', (waitObj) => {
     })
   }
 
+  // Werte senoren aus
   const extractedDecision = (iotInputs, workerArr, currentDecisionID) => {
     iotInputs.forEach(input => {
       let businessObj = getBusinessObject(input);
 
       if (businessObj.type === 'sensor') {
+        //speichere alle sensor promises u
         workerArr.push(
             pool.exec('sensorCall', [businessObj], {
               on: payload => {
@@ -453,6 +455,7 @@ listener.on('activity.wait', (waitObj) => {
               console.log("Result:");
               console.log(result);
               if (result.value) {
+                //speichere ergebnis von sensor in objekt mit der id des containers bspw a:{sensor1: 300} zugriff dann a.sensor1
                 waitObj.environment.variables[currentDecisionID] = {...waitObj.environment.variables[currentDecisionID], [input.id] : result.value };
               }
               highlightElement(input, "rgba(66, 180, 21, 0.7)");
@@ -515,54 +518,79 @@ listener.on('activity.wait', (waitObj) => {
     }).catch((e) => console.log(e));
   }
 
+  // evaluiert alle Entscheidungen eines Containers schreibt das Ergebnis in die Umgebungsvariabeln und gibt das Ergebnis als Objekt zurück
   const evalDecision = (currentShape) => {
+    // filtere alle Entscheidungen heraus und schreibe sie einzeln in ein array
     let values = currentShape.businessObject.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
+    // iteriere über jede Entscheidung
     values.forEach(value => {
+      // Werte die Entscheidung nur aus wenn Bedingung und name gegeben sind
       if (value.name && value.condition) {
+        // beliebige "buchstaben" "zahlen" "-" "_" Kombination bis ein Punkt kommt dann selbe Kombin nochmal gm -> global multiline
+        // hier wird nur die Zugriffe auf die Umgebungsvariabeln geholt bsp. container1.sensor_a
         let regex = /[a-zA-Z0-9_\-]*[.][a-zA-Z0-9_\-]*/gm;
         let stringForRegex = value.condition;
         let parsedVariableArray = stringForRegex.match(regex);
+        // zugriffe werden am punkt gesplittet und diese dann als string mit eckigen klammern versehen
         let replacedArray = parsedVariableArray.map((str) => {
           let partElement = "";
           let keyArr = str.split('.');
           keyArr.forEach(k => {
             partElement += "['"+k+"']";
           });
+          // dynamischer zugriff auf umgebungsvariabeln
           return "waitObj['environment']['variables']"+partElement;
         })
 
+        //ersetzen aller conditions zur Klammerform bsp. container.a => waitObj['environment']['variables']['container']['a']
         replacedArray.forEach((match, groupIndex) => {
           stringForRegex = stringForRegex.replace( /[a-zA-Z0-9_\-]*[.][a-zA-Z0-9_\-]*/, match);
         })
+        //auswerten der condition durch eval und anschließend ergebnis an das objekt hängen
         waitObj.environment.variables[currentShape.id] = {...waitObj.environment.variables[currentShape.id], [value.name] : eval(stringForRegex) };
       }
     })
     console.log(waitObj.environment.variables)
+    // objekt zurückgeben
     return waitObj.environment.variables[currentShape.id];
   }
 
   const getTreeResult = (treeNode) => {
+    // dort werden alle Promises der (möglichen) Kinder gespeichert.
     let childrenPromises = [];
+    // speichert alle Promises der Sensorabfragen
     const workerArrDecision = [];
 
+    // Diese Funktion gibt ein Promise zurück nachem alle Entscheidungen im Container ausgewertet wurden
+    // entweder positiv oder negativ als error falls ein sensor fehlgeschlagen ist
     const extractedDecisionSeatteldPromise = () => {
+      // gibt Promise zurück wie bereits geschrieben
       return Promise.allSettled(workerArrDecision).then((values) => {
+        // filtert heraus ob fehler beim sensor call passiert ist (wird im worker als reject markiert falls exceptioin dort fliegt)
         let rejected = values.filter(val => val.status === 'rejected');
+        // wenn keine fehler
         if (rejected.length === 0) {
           //successful
+          // werte die Bedingungen der container aus und erhalte ERgebnis in Form von einem Objekt
           let decisionResult = evalDecision(treeNode.value);
+          // overlay zeug
           addOverlaysDecision(treeNode.value, decisionResult);
           addOverlaysResult(treeNode.value, decisionResult);
+          // grün markieren
           highlightElement(treeNode.value, "rgba(66, 180, 21, 1.0)");
+          // erfolgs promise zurück geben
           return new Promise(resolve => resolve("succsess"));
         } else {
           //fail
+          // rot markieren
           highlightErrorElements(treeNode.value, waitObj, "Not executed", "error", "-", []);
+          // error promise zurück geben
           return new Promise((resolve, reject) => reject(new Error(id)));
         }
       })
     }
 
+    //extrahiere alle Sensoren + Sensore groups
     let iotInputs = treeNode.value.children.map(input => {
       if (input.businessObject.type === 'sensor' || input.businessObject.type === 'sensor-sub') {
         return bpmnViewer.get('elementRegistry').find(element => element.id === input.id);
@@ -570,30 +598,47 @@ listener.on('activity.wait', (waitObj) => {
     }).filter(e => e !== undefined);
     console.log(iotInputs);
 
-
+    //falls dieser Knoten Kinder hat
     if(treeNode.descendants.length > 0) {
+
+      // iteriere über alle Kinder
       treeNode.descendants.forEach(x => {
+        // fülle das childrenPromise array auf mit allen Kinderpromises und rufe auf den Kindern nochmal die Auswertungsfunktion auf (rekursion)
         childrenPromises.push(getTreeResult(x));
       })
+      // sobald alle Kinder ihre Promises ergebnisse zurück geliefert haben wird das hier ausgeführt
       return Promise.allSettled(childrenPromises).then((values) => {
+        // filtere ob fehler aufgetreten bei den Kindern
         let rejected = values.filter(val => val.status === 'rejected');
 
+        // falls keine Fehler
         if (rejected.length === 0) {
+          // markiere diesen container orange
           highlightElement(treeNode.value, 'rgba(255, 143, 0, 1)');
+          // Rufe Auswertung der Sensoren auf
           extractedDecision(iotInputs, workerArrDecision, treeNode.value.id);
+          // gibt am schluss ergebnis zurück an task/oder elternknoten der auf die kinderergebnisse wartet
           return extractedDecisionSeatteldPromise();
+          //falls fehler
         } else {
           //fail
           console.log("FAIL");
+          // färbe rot
           highlightElement(treeNode.value, "rgb(245,61,51)");
+          // Gehe durch jeden fehler und pack den in das seitliche LOG
           rejected.forEach(rej => fillSidebarRightLog("msg: " + rej.reason.message + ", stack: " + rej.reason.stack))
+          // gibt am schluss ergebnis zurück an task/oder elternknoten der auf die kinderergebnisse wartet auswertung von container wird nicht gemacht da exception aufgetreten
           return new Promise((resolve,reject) => reject(new Error(id)));
         }
       });
+      // falls dieser Knoten keine kinder hat
     } else {
+      // markiere diesen Container orange
       highlightElement(treeNode.value, 'rgba(255, 143, 0, 1)');
+      // Rufe Auswertung der Sensoren auf
       extractedDecision(iotInputs, workerArrDecision, treeNode.value.id);
     }
+    // gibt am schluss ergebnis zurück an task/oder elternknoten der auf die kinderergebnisse wartet
     return extractedDecisionSeatteldPromise();
   }
 
