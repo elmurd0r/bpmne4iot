@@ -16,20 +16,6 @@ export default class CustomPalette {
       translate
     } = this;
 
-    function createDecision(decisionType) {
-      return function(event) {
-        const businessObject = bpmnFactory.create('bpmn:SubProcess');
-        businessObject.set('type', decisionType);
-
-        const shape = elementFactory.createShape({
-          type: 'bpmn:SubProcess',
-          businessObject: businessObject,
-          isExpanded: true
-        });
-        create.start(event, shape);
-      };
-    }
-
 
     function createIotObj(iotType) {
       return function(event) {
@@ -88,34 +74,6 @@ export default class CustomPalette {
 
         create.start(event, shape);
       }
-    }
-
-    function createIoTThrowEvent(iotType) {
-      return function(event) {
-        const businessObject = bpmnFactory.create('bpmn:IntermediateCatchEvent');
-        businessObject.set('iot:type', iotType);
-
-        const shape = elementFactory.createShape({
-          type: 'bpmn:IntermediateCatchEvent',
-          businessObject: businessObject,
-          eventDefinitionType: 'bpmn:MessageEventDefinition'
-        });
-
-        create.start(event, shape);
-      }
-    }
-
-    function createRuleOperator(param) {
-      return function(event) {
-        const businessObject = bpmnFactory.create('bpmn:TextAnnotation');
-        businessObject.set('iotr:operator', '&&');
-
-        const shape = elementFactory.createShape({
-          type: 'bpmn:TextAnnotation',
-          businessObject: businessObject
-        });
-        create.start(event, shape);
-      };
     }
 
     return {
