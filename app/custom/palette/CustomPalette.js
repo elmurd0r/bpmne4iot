@@ -139,16 +139,6 @@ export default class CustomPalette {
           click: createIoTCatchEvent("catch")
         }
       },
-      'create.iot-throw': {
-        group: 'iot',
-        className: 'iot-throw iot-palette-element',
-        title: translate('Create IoT Throw Event'),
-        iot: 'throw',
-        action: {
-          dragstart: createIoTThrowEvent("throw"),
-          click: createIoTThrowEvent("throw")
-        }
-      },
       'create.iot-end': {
         group: 'iot',
         className: 'iot-end iot-palette-element',
@@ -169,16 +159,6 @@ export default class CustomPalette {
           click: createIotObj("sensor")
         }
       },
-      'create.iot-sensor-sub': {
-        group: 'iot',
-        className: 'iot-sensor-sub iot-palette-element',
-        title: translate('Create IoT Sensor Sub'),
-        iot: 'sensor-sub',
-        action: {
-          dragstart: createIotObj("sensor-sub"),
-          click: createIotObj("sensor-sub")
-        }
-      },
       'create.iot-actor': {
         group: 'iot',
         className: 'iot-actor iot-palette-element',
@@ -187,66 +167,6 @@ export default class CustomPalette {
         action: {
           dragstart: createIotObj("actor"),
           click: createIotObj("actor")
-        }
-      },
-      'create.iot-actor-sub': {
-        group: 'iot',
-        className: 'iot-actor-sub iot-palette-element',
-        title: translate('Create IoT Actor Sub'),
-        iot: 'actor-sub',
-        action: {
-          dragstart: createIotObj("actor-sub"),
-          click: createIotObj("actor-sub")
-        }
-      },
-      'create.iot-artefact-catch': {
-        group: 'iot',
-        className: 'iot-artefact-catch iot-palette-element',
-        title: translate('Create IoT Artefact Catch'),
-        iot: 'artefact-catch',
-        action: {
-          dragstart: createIotObj("artefact-catch"),
-          click: createIotObj("artefact-catch")
-        }
-      },
-      'create.iot-artefact-catch-sub': {
-        group: 'iot',
-        className: 'iot-artefact-catch-sub iot-palette-element',
-        title: translate('Create IoT Artefact Catch Sub'),
-        iot: 'artefact-catch-sub',
-        action: {
-          dragstart: createIotObj("artefact-catch-sub"),
-          click: createIotObj("artefact-catch-sub")
-        }
-      },
-        'create.iot-decision-group': {
-          group: 'iot',
-          className: 'iot-decision-container iot-palette-element',
-          title: translate('Create IoT Decision Group'),
-          iot: 'decision-group',
-          action: {
-            dragstart: createDecision("decision-group"),
-            click: createDecision("decision-group"),
-          }
-      },
-      'create.iot-obj': {
-        group: 'iot',
-        className: 'iot-artefact-obj iot-palette-element',
-        title: translate('Create IoT Artifact Object'),
-        iot: 'obj',
-        action: {
-          dragstart: createIotObj("obj"),
-          click: createIotObj("obj")
-        }
-      },
-      'create.iotr-operator': {
-        group: 'iotr',
-        iot: 'rule-operator',
-        className: 'iotr-operator iot-palette-element',
-        title: translate('Create IoT Rule Operator'),
-        action: {
-          dragstart: createRuleOperator("test"),
-          click: createRuleOperator("test")
         }
       }
     };
