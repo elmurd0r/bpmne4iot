@@ -105,69 +105,11 @@ export default class CustomPalette {
       }
     }
 
-    function createRuleOperator(param) {
-      return function(event) {
-        const businessObject = bpmnFactory.create('bpmn:TextAnnotation');
-        businessObject.set('iotr:operator', '&&');
-
-        const shape = elementFactory.createShape({
-          type: 'bpmn:TextAnnotation',
-          businessObject: businessObject
-        });
-        create.start(event, shape);
-      };
-    }
-
-    function createRuleGateway(param) {
-      return function(event) {
-        const businessObject = bpmnFactory.create('bpmn:Task');
-        businessObject.set('iotr:gateway', param);
-
-        const shape = elementFactory.createShape({
-          type: 'bpmn:Task',
-          businessObject: businessObject
-        });
-        shape.height = 42;
-        if (param === 'condition') {
-          shape.height = 21;
-        }
-        create.start(event, shape);
-      };
-    }
-
-    function createIotConditionalStart() {
-      return function(event) {
-        const businessObject = bpmnFactory.create('bpmn:StartEvent');
-        businessObject.set('iotr:eventType', 'cond-start');
-
-        const shape = elementFactory.createShape({
-          type: 'bpmn:StartEvent',
-          businessObject: businessObject
-        });
-
-        create.start(event, shape);
-      };
-    }
-
-    function createIotConditionalInterm() {
-      return function(event) {
-        const businessObject = bpmnFactory.create('bpmn:IntermediateCatchEvent');
-        businessObject.set('iotr:eventType', 'cond-interm');
-
-        const shape = elementFactory.createShape({
-          type: 'bpmn:IntermediateCatchEvent',
-          businessObject: businessObject
-        });
-
-        create.start(event, shape);
-      };
-    }
-
     return {
       'create.iot-start': {
         group: 'iot',
         className: 'iot-start iot-palette-element',
-        title: translate('Create IoT Start'),
+        title: translate('Create IoT Start Event'),
         iot: 'start',
         action: {
           dragstart: createIotStart("start"),
@@ -177,7 +119,7 @@ export default class CustomPalette {
       'create.iot-catch': {
         group: 'iot',
         className: 'iot-catch iot-palette-element',
-        title: translate('Create IoT Catch Event'),
+        title: translate('Create IoT Intermediate Catch Event'),
         iot: 'catch',
         action: {
           dragstart: createIoTCatchEvent("catch"),
@@ -187,7 +129,7 @@ export default class CustomPalette {
       'create.iot-throw': {
         group: 'iot',
         className: 'iot-throw iot-palette-element',
-        title: translate('Create IoT Throw Event'),
+        title: translate('Create IoT Intermediate Throw Event'),
         iot: 'throw',
         action: {
           dragstart: createIoTThrowEvent("throw"),
@@ -197,7 +139,7 @@ export default class CustomPalette {
       'create.iot-end': {
         group: 'iot',
         className: 'iot-end iot-palette-element',
-        title: translate('Create IoT End'),
+        title: translate('Create IoT End Event'),
         iot: 'end',
         action: {
           dragstart: createIotEnd("end"),
@@ -206,7 +148,7 @@ export default class CustomPalette {
       },
       'create.iot-sensor': {
         group: 'iot',
-        title: translate('Create IoT Sensor'),
+        title: translate('Create Sensor Artifact'),
         className: 'iot-sensor iot-palette-element',
         iot: 'sensor',
         action: {
@@ -217,7 +159,7 @@ export default class CustomPalette {
       'create.iot-sensor-sub': {
         group: 'iot',
         className: 'iot-sensor-sub iot-palette-element',
-        title: translate('Create IoT Sensor Sub'),
+        title: translate('Create Sensor Group Artifact'),
         iot: 'sensor-sub',
         action: {
           dragstart: createIotObj("sensor-sub"),
@@ -227,7 +169,7 @@ export default class CustomPalette {
       'create.iot-actor': {
         group: 'iot',
         className: 'iot-actor iot-palette-element',
-        title: translate('Create IoT Actor'),
+        title: translate('Create Actuator Artifact'),
         iot: 'actor',
         action: {
           dragstart: createIotObj("actor"),
@@ -237,7 +179,7 @@ export default class CustomPalette {
       'create.iot-actor-sub': {
         group: 'iot',
         className: 'iot-actor-sub iot-palette-element',
-        title: translate('Create IoT Actor Sub'),
+        title: translate('Create Actuator Group Artifact'),
         iot: 'actor-sub',
         action: {
           dragstart: createIotObj("actor-sub"),
@@ -247,7 +189,7 @@ export default class CustomPalette {
       'create.iot-artefact-catch': {
         group: 'iot',
         className: 'iot-artefact-catch iot-palette-element',
-        title: translate('Create IoT Artefact Catch'),
+        title: translate('Create Catch Artifact'),
         iot: 'artefact-catch',
         action: {
           dragstart: createIotObj("artefact-catch"),
@@ -257,91 +199,21 @@ export default class CustomPalette {
       'create.iot-artefact-catch-sub': {
         group: 'iot',
         className: 'iot-artefact-catch-sub iot-palette-element',
-        title: translate('Create IoT Artefact Catch Sub'),
+        title: translate('Create Catch Group Artifact'),
         iot: 'artefact-catch-sub',
         action: {
           dragstart: createIotObj("artefact-catch-sub"),
           click: createIotObj("artefact-catch-sub")
         }
       },
-        'create.iot-decision-group': {
-          group: 'iot',
-          className: 'iot-decision-container iot-palette-element',
-          title: translate('Create IoT Decision Group'),
-          iot: 'decision-group',
-          action: {
-            dragstart: createDecision("decision-group"),
-            click: createDecision("decision-group"),
-          }
-      },
       'create.iot-obj': {
         group: 'iot',
         className: 'iot-artefact-obj iot-palette-element',
-        title: translate('Create IoT Artifact Object'),
+        title: translate('Create Object Artifact'),
         iot: 'obj',
         action: {
           dragstart: createIotObj("obj"),
           click: createIotObj("obj")
-        }
-      },
-      'create.iotr-or-gateway': {
-        group: 'iotr',
-        iot: 'or',
-        className: 'iotr-gateway iot-palette-element',
-        title: translate('Create IoT OR Gateway'),
-        action: {
-          dragstart: createRuleGateway("or"),
-          click: createRuleGateway("or")
-        }
-      },
-      'create.iotr-and-gateway': {
-        group: 'iotr',
-        iot: 'and',
-        className: 'iotr-gateway iot-palette-element',
-        title: translate('Create IoT AND Gateway'),
-        action: {
-          dragstart: createRuleGateway("and"),
-          click: createRuleGateway("and")
-        }
-      },
-      'create.iotr-result-gateway': {
-        group: 'iotr',
-        iot: 'result',
-        className: 'iotr-gateway iot-palette-element',
-        title: translate('Create IoT Result Gateway'),
-        action: {
-          dragstart: createRuleGateway("result"),
-          click: createRuleGateway("result")
-        }
-      },
-        'create.iotr-condition-gateway': {
-      group: 'iotr',
-          iot: 'condition',
-          className: 'iotr-gateway iot-palette-element',
-          title: translate('Create IoT condition Gateway'),
-          action: {
-        dragstart: createRuleGateway("condition"),
-            click: createRuleGateway("condition")
-      }
-    },
-      'create.iotr-conditionalStart': {
-        group: 'iotr',
-        iot: 'cond-start',
-        className: 'iotr-event iot-palette-element',
-        title: translate('Create IoT conditional start event'),
-        action: {
-          dragstart: createIotConditionalStart(),
-          click: createIotConditionalStart()
-        }
-      },
-      'create.iotr-conditionalInterm': {
-        group: 'iotr',
-        iot: 'cond-interm',
-        className: 'iotr-event iot-palette-element',
-        title: translate('Create IoT conditional Intermediate event'),
-        action: {
-          dragstart: createIotConditionalInterm(),
-          click: createIotConditionalInterm()
         }
       }
     };

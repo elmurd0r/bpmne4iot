@@ -1,4 +1,3 @@
-import * as SVGEncoded from "../svg/SvgExporter";
 //default
 import startEventSVG from "../svg/default/start_event.svg";
 import catchEventSVG from "../svg/default/catch_event.svg";
@@ -11,15 +10,6 @@ import sensorGroupSVG from "../svg/default/sensor_group.svg";
 import catchSVG from "../svg/default/catch.svg";
 import catchGroupSVG from "../svg/default/catch_group.svg";
 import objSVG from "../svg/default/obj.svg";
-import decisionLargeSVG from "../svg/default/decision_group_large.svg";
-import ruleOperatorSVG from "../svg/default/rule_operator.svg";
-import orGatewaySVG from "../svg/default/container-components/or.svg";
-import andGatewaySVG from "../svg/default/container-components/and.svg";
-import resultGatewaySVG from "../svg/default/container-components/result.svg";
-import conditionGatewaySVG from "../svg/default/container-components/condition.svg";
-import conditionalStartSVG from "../svg/default/conditional/conditional_iot_start.svg";
-import conditionalIntermSVG from "../svg/default/conditional/conditional_iot_interm.svg";
-import conditionalIntermWhiteSVG from "../svg/default/conditional/conditional_iot_interm_white.svg";
 //RED
 import startEventSVGRed from "../svg/red/start_event_red.svg";
 import catchEventSVGRed from "../svg/red/catch_event_red.svg";
@@ -56,189 +46,6 @@ import sensorGroupSVGOrange from "../svg/orange/sensor_group_orange.svg";
 import catchGroupSVGOrange from "../svg/orange/catch_group_orange.svg";
 import catchSVGOrange from "../svg/orange/catch_orange.svg";
 import objSVGOrange from "../svg/orange/obj_orange.svg"
-
-export const getEncodedSvg = (iotType, color) => {
-    let imageHref;
-    switch (iotType) {
-        case 'start':
-            imageHref = SVGEncoded.startEventSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.startEventSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.startEventSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.startEventSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'actor':
-            imageHref = SVGEncoded.actuatorSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.actuatorSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.actuatorSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.actuatorSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'actor-sub':
-            imageHref = SVGEncoded.actuatorGroupSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.actuatorGroupSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.actuatorGroupSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.actuatorGroupSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'sensor-sub':
-            imageHref = SVGEncoded.sensorGroupSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.sensorGroupSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.sensorGroupSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.sensorGroupSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'throw':
-            imageHref = SVGEncoded.throwEventSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.throwEventSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.throwEventSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.throwEventSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'catch':
-            imageHref = SVGEncoded.catchEventSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.catchEventSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.catchEventSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.catchEventSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'artefact-catch':
-            imageHref = SVGEncoded.catchSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.catchSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.catchSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.catchSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'artefact-catch-sub':
-            imageHref = SVGEncoded.catchGroupSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.catchGroupSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.catchGroupSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.catchGroupSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'end':
-            imageHref = SVGEncoded.endEventSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.endEventSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.endEventSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.endEventSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'obj':
-            imageHref = SVGEncoded.objSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.objSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.objSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.objSVGEncodedGreen;
-                        break;
-                }
-            }
-            break;
-        case 'sensor':
-        default:
-            imageHref = SVGEncoded.sensorSVGEncoded;
-            if(color) {
-                switch (color) {
-                    case 'RED':
-                        imageHref = SVGEncoded.sensorSVGEncodedRed;
-                        break;
-                    case 'ORANGE':
-                        imageHref = SVGEncoded.sensorSVGEncodedOrange;
-                        break;
-                    default :
-                        imageHref = SVGEncoded.sensorSVGEncodedGreen;
-                        break;
-                }
-            }
-    }
-    return imageHref;
-}
 
 export const getSvg = (iotType, color) => {
     let svg;
@@ -402,30 +209,6 @@ export const getSvg = (iotType, color) => {
                         break;
                 }
             }
-            break;
-        case 'decision-group':
-            svg = decisionLargeSVG;
-            break;
-        case 'rule-operator':
-            svg = ruleOperatorSVG;
-            break;
-        case 'or':
-            svg = orGatewaySVG;
-            break;
-        case 'and':
-            svg = andGatewaySVG;
-            break;
-        case 'result':
-            svg = resultGatewaySVG;
-            break;
-        case 'condition':
-            svg = conditionGatewaySVG;
-            break;
-        case 'cond-start':
-            svg = conditionalStartSVG;
-            break;
-        case 'cond-interm':
-            svg = color ? conditionalIntermWhiteSVG : conditionalIntermSVG;
             break;
         case 'sensor':
         default:
