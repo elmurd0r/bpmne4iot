@@ -11,6 +11,7 @@ const sensorCall = (businessObj) => {
         let key = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values[0].key;
 
         if(url && key) {
+            workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'StartTime' ,'id': businessObj.id, 'type': 'bpmn:SensorArtifact'}})
             axios.get( url ).then((resp)=>{
                 let value = resp.data;
                 let keyArr = key.split('.');
@@ -18,10 +19,11 @@ const sensorCall = (businessObj) => {
                     value = value[k];
                 });
                 if(!isNil(value)) {
-                    console.log("HTTP GET successfully completed");
                     console.log('Name: ' + key + ', Value: ' + value);
+                    console.log("HTTP GET successfully completed");
                     workerpool.workerEmit({status: "HTTP GET successfully completed"});
                     workerpool.workerEmit({status: 'Name: ' + key + ', Value: ' + value});
+                    workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'type': 'bpmn:SensorArtifact', 'responseValue': value}})
                     resolve({value: value});
                 } else {
                     console.log('response value is NaN');
@@ -43,9 +45,11 @@ const sensorCall = (businessObj) => {
 }
 
 
-const sensorCallGroup = (url, key, id) => {
+const sensorCallGroup = (url, key, businessObj) => {
+    const id = businessObj.id;
     return new Promise((resolve, reject) => {
         if(url && key) {
+            workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'StartTime' ,'id': businessObj.id, 'type': 'bpmn:SensorGroupArtifact'}})
             axios.get( url ).then((resp)=>{
                 let value = resp.data;
                 let keyArr = key.split('.');
@@ -58,6 +62,7 @@ const sensorCallGroup = (url, key, id) => {
                     console.log('Name: ' + key + ', Value: ' + value);
                     workerpool.workerEmit({status: "HTTP GET successfully completed"});
                     workerpool.workerEmit({status: 'Name: ' + key + ', Value: ' + value});
+                    workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'type': 'bpmn:SensorGroupArtifact', 'responseValue': value}})
                     resolve({value: value});
                 } else {
                     console.log('response value is NaN');
@@ -84,9 +89,11 @@ const actorCall = (businessObj) => {
         let eventValUrl = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values[0].url;
         let method = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values[0].method;
         if(eventValUrl) {
+            workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'StartTime' ,'id': businessObj.id, 'type': 'bpmn:ActuatorArtifact'}})
             if(method !== 'POST') {
                 axios.get( eventValUrl).then((resp)=>{
                     console.log("HTTP GET successfully completed");
+                    workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'type': 'bpmn:ActuatorArtifact', 'responseValue': resp.status, 'responseType': 'Status Code'}});
                     console.log('Executed call: ' + eventValUrl);
                     workerpool.workerEmit({status: "HTTP GET successfully completed"});
                     workerpool.workerEmit({status: 'Executed call: ' + eventValUrl});
@@ -103,6 +110,7 @@ const actorCall = (businessObj) => {
                     console.log('Executed call: ' + eventValUrl);
                     workerpool.workerEmit({status: "HTTP POST successfully completed"});
                     workerpool.workerEmit({status: 'Executed call: ' + eventValUrl});
+                    workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'type': 'bpmn:ActuatorArtifact', 'responseValue': resp.status, 'responseType': 'Status Code'}})
                     resolve();
                 }).catch((e)=>{
                     console.log(e);
@@ -120,12 +128,15 @@ const actorCall = (businessObj) => {
 }
 
 
-const actorCallGroup = (url, method, id) => {
+const actorCallGroup = (url, method, businessObj) => {
+    const id = businessObj.id;
     return new Promise(((resolve, reject) => {
         if(url) {
+            workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'StartTime' ,'id': businessObj.id, 'type': 'bpmn:ActuatorGroupArtifact'}})
             if(method === 'GET') {
                 axios.get( url ).then((resp)=>{
                     console.log("HTTP GET successfully completed");
+                    workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'type': 'bpmn:ActuatorGroupArtifact', 'responseValue': resp.status, 'responseType': 'Status Code'}});
                     console.log('Executed call: ' + url);
                     workerpool.workerEmit({status: "HTTP GET successfully completed"});
                     workerpool.workerEmit({status: 'Executed call: ' + url});
@@ -142,6 +153,7 @@ const actorCallGroup = (url, method, id) => {
                     console.log('Executed call: ' + url);
                     workerpool.workerEmit({status: "HTTP POST successfully completed"});
                     workerpool.workerEmit({status: 'Executed call: ' + url});
+                    workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'type': 'bpmn:ActuatorGroupArtifact', 'responseValue': resp.status, 'responseType': 'Status Code'}})
                     resolve();
                 }).catch((e)=>{
                     console.log(e);
@@ -170,17 +182,20 @@ const sensorCatchArtefact = (businessObj, start_t, timeout) => {
 
         if(eventValue && name && mathOp && mathOpVal){
             mathOpVal = convertInputToFloatOrKeepType(mathOpVal);
+            workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'StartTime' ,'id': businessObj.id, 'type': businessObj.type, 'condition': name +" "+ mathOp +" "+mathOpVal}})
             const axiosGet = () => {
                 let noTimeoutOccured =  new Date().getTime() - start_t <= timeout;
                 if(!timeout || noTimeoutOccured) {
                     axios.get(eventValue).then((resp) => {
                         let resVal = getResponseByAttributeAccessor(resp.data, name)
                         if (!isNil(resVal)) {
+                            workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EvalTime' ,'id': businessObj.id, 'responseValue': String(resVal) ,'type': businessObj.type, 'condition': name +" "+ mathOp +" "+mathOpVal}});
                             switch (mathOp) {
                                 case '<' :
                                     if (parseFloat(resVal) < mathOpVal) {
                                         console.log(name + " reached state " + resVal);
                                         workerpool.workerEmit({status: name + " reached state " + resVal});
+                                        workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'responseValue': String(resVal) ,'type': businessObj.type, 'condition': name +" "+ mathOp +" "+mathOpVal}});
                                         resolve(resVal);
                                     } else {
                                         console.log("WAIT UNTIL " + name + " with state " + resVal + " reached");
@@ -194,6 +209,7 @@ const sensorCatchArtefact = (businessObj, start_t, timeout) => {
                                     if (resVal === mathOpVal) {
                                         console.log(name + " reached state " + resVal);
                                         workerpool.workerEmit({status: name + " reached state " + resVal});
+                                        workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'responseValue': String(resVal) ,'type': businessObj.type, 'condition': name +" "+ mathOp +" "+mathOpVal}});
                                         resolve(resVal);
                                     } else {
                                         console.log("WAIT UNTIL " + name + " with state " + resVal + " reached");
@@ -205,6 +221,7 @@ const sensorCatchArtefact = (businessObj, start_t, timeout) => {
                                     if (parseFloat(resVal) > mathOpVal) {
                                         console.log(name + " reached state " + resVal);
                                         workerpool.workerEmit({status: name + " reached state " + resVal});
+                                        workerpool.workerEmit({responseForLog:  {'case': '1', 'label': businessObj.name , 'timestamp': new Date().getTime(), 'timestampType': 'EndTime' ,'id': businessObj.id, 'responseValue': String(resVal) ,'type': businessObj.type, 'condition': name +" "+ mathOp +" "+mathOpVal}});
                                         resolve(resVal);
                                     } else {
                                         console.log("WAIT UNTIL " + name + " with state " + resVal + " reached");

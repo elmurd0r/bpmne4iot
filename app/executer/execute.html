@@ -17,21 +17,24 @@
 
 <div id="mySidebar" class="sidebar border-top border-3 border-secondary">
     <div class="d-flex align-items-center justify-content-center">
-        <div class="p-2 bd-highlight col-example" id="sidebarHeader">Execution order</div>
+        <div class="p-2 bd-highlight col-example" id="sidebarHeader">Execution log</div>
+        <button class="btn btn-primary btn-lg" id="downloadLog">&#8595; Download</button>
     </div>
     <a href="javascript:void(0)" id="closebtn" class="closebtn">&times;</a>
     <div class="p-5 pt-0 mt-5" style="overflow-y: auto; height: 100%">
         <table id="overlayTable" class="table">
             <thead class="thead-dark text-center">
             <tr class="thead-row theader">
-                <th class="theader" scope="col">State</th>
-                <th class="theader" scope="col">Name</th>
+                <th class="theader" scope="col">Case</th>
+                <th class="theader" scope="col">Label</th>
+                <th class="theader" scope="col">Timestamp</th>
+                <th class="theader" scope="col">TimestampType</th>
                 <th class="theader" scope="col">ID</th>
                 <th class="theader" scope="col">Type</th>
-                <th class="theader" scope="col">Source</th>
-                <th class="theader" scope="col">Start timestamp</th>
-                <th class="theader" scope="col">Execution Time</th>
-                <th class="theader" scope="col">Error message</th>
+                <th class="theader" scope="col">ConnectedTo</th>
+                <th class="theader" scope="col">ResponseValue</th>
+                <th class="theader" scope="col">ResponseTypeValue</th>
+                <th class="theader" scope="col">Condition</th>
             </tr>
             </thead>
             <tbody id="tableBody">

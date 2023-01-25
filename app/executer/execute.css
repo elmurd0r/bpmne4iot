@@ -102,6 +102,12 @@ a.btn:hover {
     font-family: Menlo, Consolas, Monaco, "Lucida Console", "Liberation Mono", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Courier New", monospace, serif;
 }
 
+#downloadLog {
+    position: absolute;
+    top: 10px;
+    left: 25px;
+    margin-left: 20px;
+}
 
 .closebtnRight {
     position: absolute;
@@ -146,6 +152,7 @@ a.btn:hover {
 
 /* Position and style the close button (top right corner) */
 .sidebar .closebtn {
+    position: absolute;
     position: absolute;
     top: 0;
     right: 25px;

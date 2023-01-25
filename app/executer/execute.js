@@ -80,6 +80,34 @@ listener.on('activity.start', (start) => {
   console.log(start.id);
   fillSidebarRightLog("=-=-=-=-=-=-=-=");
   fillSidebarRightLog(start.id);
+
+  let startEventArr = bpmnViewer.get('elementRegistry').filter(element => is(element, "bpmn:StartEvent"));
+  let endEventArr = bpmnViewer.get('elementRegistry').filter(element => is(element, "bpmn:EndEvent"));
+  let catchEventArr = bpmnViewer.get('elementRegistry').filter(element => is(element, "bpmn:IntermediateCatchEvent"));
+
+
+
+  let startEvent = startEventArr.find(startEvent => startEvent.id === start.id && startEvent?.businessObject.type === 'start');
+  let endEvent = endEventArr.find(endEvent => endEvent.id === start.id && endEvent?.businessObject.type === 'end');
+  let catchEvent = catchEventArr.find(catchEvent => catchEvent.id === start.id && catchEvent?.businessObject.type === 'catch');
+  let throwEvent = catchEventArr.find(throwEvent => throwEvent.id === start.id && throwEvent?.businessObject.type === 'throw');
+
+  if(!startEvent && !catchEvent && !endEvent && !throwEvent) {
+    fillSidebar("1", start.name, start_t, "StartTime", start.id, start.type, "", "", "", "");
+  }
+
+  if(catchEvent) {
+    fillSidebar("1", start.name, start_t, "StartTime", start.id, 'bpmn:IoTIntermediateCatchEvent', "", "", "", "");
+  }
+
+  if(endEvent) {
+    fillSidebar("1", start.name, start_t, "StartTime", start.id, 'bpmn:IoTEndEvent', "", "", "", "");
+  }
+
+  if(throwEvent) {
+    fillSidebar("1", start.name, start_t, "StartTime", start.id, 'bpmn:IoTIntermediateThrowEvent', "", "", "", "");
+  }
+
 });
 
 
@@ -112,17 +140,23 @@ listener.on('activity.wait', (waitObj) => {
 
       if (name && mathOp && mathOpVal && mathOpVal) {
         mathOpVal = convertInputToFloatOrKeepType(mathOpVal);
+        fillSidebar("1", waitObj.name, new Date().getTime(), "StartTime", waitObj.id, 'sensor', "", "", "", name + " " + mathOp + " " + mathOpVal);
         const axiosGet = () => {
           let noTimeoutOccured =  new Date().getTime() - start_t <= timeout * 1000;
           if(!timeout || noTimeoutOccured) {
             axios.get(eventValue).then((resp) => {
               let resVal = getResponseByAttributeAccessor(resp.data, name);
               if (!isNil(resVal)) {
+                fillSidebar("1", waitObj.name, new Date().getTime(), "EvalTime", waitObj.id, 'sensor', "", String(resVal), "", name + " " + mathOp + " " + mathOpVal);
                 switch (mathOp) {
                   case '<' :
                     if (parseFloat(resVal) < mathOpVal) {
                       console.log(name + " reached state " + resVal);
                       fillSidebarRightLog(name + " reached state " + resVal);
+                      fillSidebar("1", waitObj.name, new Date().getTime(), "EndTime", waitObj.id, 'sensor', "", String(resVal), "", name + " " + mathOp + " " + mathOpVal);
+                      if(startEvent) {
+                        fillSidebar("1", waitObj.name, new Date().getTime(), "StartTime", waitObj.id, 'bpmn:IoTStartEvent', "", String(resVal), "", name + " " + mathOp + " " + mathOpVal);
+                      }
                       waitObj.signal();
                     } else {
                       console.log("WAIT UNTIL " + name + " with state " + resVal + " reached");
@@ -135,6 +169,10 @@ listener.on('activity.wait', (waitObj) => {
                     if (resVal === mathOpVal) {
                       console.log(name + " reached state " + resVal);
                       fillSidebarRightLog(name + " reached state " + resVal);
+                      fillSidebar("1", waitObj.name, new Date().getTime(), "EndTime", waitObj.id, 'sensor', "", String(resVal), "", name + " " + mathOp + " " + mathOpVal);
+                      if(startEvent) {
+                        fillSidebar("1", waitObj.name, new Date().getTime(), "StartTime", waitObj.id, 'bpmn:IoTStartEvent', "", String(resVal), "", name + " " + mathOp + " " + mathOpVal);
+                      }
                       waitObj.signal();
                     } else {
                       console.log("WAIT UNTIL " + name + " with state " + resVal + " reached");
@@ -146,6 +184,10 @@ listener.on('activity.wait', (waitObj) => {
                     if (parseFloat(resVal) > mathOpVal) {
                       console.log(name + " reached state " + resVal);
                       fillSidebarRightLog(name + " reached state " + resVal);
+                      fillSidebar("1", waitObj.name, new Date().getTime(), "EndTime", waitObj.id, 'sensor', "", String(resVal), "", name + " " + mathOp + " " + mathOpVal);
+                      if(startEvent) {
+                        fillSidebar("1", waitObj.name, new Date().getTime(), "StartTime", waitObj.id, 'bpmn:IoTStartEvent', "", String(resVal), "", name + " " + mathOp + " " + mathOpVal);
+                      }
                       waitObj.signal();
                     } else {
                       console.log("WAIT UNTIL " + name + " with state " + resVal + " reached");
@@ -207,10 +249,12 @@ listener.on('activity.wait', (waitObj) => {
     let eventValUrl = iotProperties.url;
     let method = iotProperties.method;
     if(eventValUrl) {
+      fillSidebar("1", waitObj.name, new Date().getTime(), "StartTime", waitObj.id, 'actuator', "", "", "", "");
       if(method === 'GET') {
         axios.get( eventValUrl).then((resp)=>{
           console.log("HTTP GET successfully completed");
           console.log('Executed call: ' + eventValUrl);
+          fillSidebar("1", waitObj.name, new Date().getTime(), "EndTime", waitObj.id, 'actuator', "", resp.status, "Status Code", "");
           fillSidebarRightLog("HTTP GET successfully completed");
           fillSidebarRightLog('Executed GET: ' + eventValUrl);
           waitObj.signal();
@@ -224,6 +268,7 @@ listener.on('activity.wait', (waitObj) => {
         axios.post( eventValUrl, {}, { headers: {'Content-Type': 'application/json','Access-Control-Allow-Origin': '*'}}).then((resp)=>{
           console.log("HTTP POST successfully completed");
           console.log('Executed call: ' + eventValUrl);
+          fillSidebar("1", waitObj.name, new Date().getTime(), "EndTime", waitObj.id, 'bpmn:IoTIntermediateThrowEvent', "", resp.status, "Status Code", "");
           fillSidebarRightLog("HTTP POST successfully completed");
           fillSidebarRightLog('Executed call: ' + eventValUrl);
           waitObj.signal();
@@ -250,7 +295,12 @@ listener.on('activity.wait', (waitObj) => {
         workerArr.push(
             pool.exec('sensorCall', [businessObj], {
               on: payload => {
-                fillSidebarRightLog(payload.status);
+                if(payload.responseForLog) {
+                  const res = payload.responseForLog;
+                  fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, res.type ,waitObj.id, res.responseValue || "", res.responseType || "", "");
+                } else {
+                  fillSidebarRightLog(payload.status);
+                }
               }
             }).then(result => {
               console.log("Result:");
@@ -273,10 +323,7 @@ listener.on('activity.wait', (waitObj) => {
         let values = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
         values.forEach(value => {
           if (value.url && value.key && value.name) {
-            let execElement = pool.exec('sensorCallGroup', [value.url, value.key, businessObj.id], {
-              on: payload => {
-                fillSidebarRightLog(payload.status);
-              }
+            let execElement = pool.exec('sensorCallGroup', [value.url, value.key, businessObj], {
             }).then(result => {
               console.log("Result:");
               console.log(result);
@@ -310,7 +357,12 @@ listener.on('activity.wait', (waitObj) => {
         workerArr.push(
             pool.exec('sensorCatchArtefact', [businessObj, start_t, timeout], {
               on: payload => {
-                fillSidebarRightLog(payload.status);
+                if(payload.responseForLog) {
+                  const res = payload.responseForLog;
+                  fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, res.type ,waitObj.id, res.responseValue || "", res.responseType || "", res.condition || "");
+                } else {
+                  fillSidebarRightLog(payload.status);
+                }
               }
             }).then(result => {
               console.log("Result:");
@@ -376,7 +428,12 @@ listener.on('activity.wait', (waitObj) => {
         workerArr.push(
             pool.exec('actorCall', [businessObj], {
               on: payload => {
-                fillSidebarRightLog(payload.status);
+                if(payload.responseForLog) {
+                  const res = payload.responseForLog;
+                  fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, res.type ,waitObj.id, res.responseValue || "", res.responseType || "", "");
+                } else {
+                  fillSidebarRightLog(payload.status);
+                }
               }
             }).then(result => {
               console.log("Result:");
@@ -394,9 +451,14 @@ listener.on('activity.wait', (waitObj) => {
         let execArray = [];
         let values = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:Properties')[0].values;
         values.forEach(value => {
-          let execElement = pool.exec('actorCallGroup', [value.url, value.method, businessObj.id], {
+          let execElement = pool.exec('actorCallGroup', [value.url, value.method, businessObj], {
             on: payload => {
-              fillSidebarRightLog(payload.status);
+              if(payload.responseForLog) {
+                const res = payload.responseForLog;
+                fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, res.type ,waitObj.id, res.responseValue || "", res.responseType || "", "");
+              } else {
+                fillSidebarRightLog(payload.status);
+              }
             }
           }).then(result => {
             console.log("Result:");
@@ -423,7 +485,12 @@ listener.on('activity.wait', (waitObj) => {
         workerArr.push(
             pool.exec('actorCall', [businessObj], {
               on: payload => {
-                fillSidebarRightLog(payload.status);
+                if(payload.responseForLog) {
+                  const res = payload.responseForLog;
+                  fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, 'bpmn:ObjectArtifact' ,waitObj.id, res.responseValue || "", res.responseType || "", "");
+                } else {
+                  fillSidebarRightLog(payload.status);
+                }
               }
             }).then(result => {
               console.log("Result:");
@@ -514,7 +581,12 @@ listener.on('activity.end', (element)=>{
     workerArr.push(
       pool.exec('actorCall', [businessObj], {
         on: payload => {
-          fillSidebarRightLog(payload.status);
+          if(payload.responseForLog) {
+            const res = payload.responseForLog;
+            fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, 'actuator' ,element.id, res.responseValue || "", res.responseType || "", "");
+          } else {
+            fillSidebarRightLog(payload.status);
+          }
         }
       }).then(result => {
         let end_t_1 = new Date().getTime();
@@ -523,7 +595,7 @@ listener.on('activity.end', (element)=>{
         console.log(result);
         highlightElement(currentElement, Color.green_low_opacity);
         addOverlays(currentElement, _time);
-        fillSidebar(confirmIcon, element.name, element.id, _time, timeStamp, 'bpmn:IoTEndEvent', "-", obj ? obj[0].sourceId : '-');
+        fillSidebar("1", element.label, new Date().getTime(), 'EndTime', element.id, 'bpmn:IoTEndEvent' ,"", "", "", "");
         return result;
       }).catch(e => {
         let end_t_1 = new Date().getTime();
@@ -537,7 +609,6 @@ listener.on('activity.end', (element)=>{
     if(businessObj?.type !== 'decision-group') {
       highlightElement(currentElement, Color.green_low_opacity);
       addOverlays(currentElement, time);
-      fillSidebar(confirmIcon, element.name, element.id, time, timeStamp, element.type, "-", obj ? obj[0].sourceId : '-');
     }
   }
 
@@ -565,6 +636,28 @@ listener.on('activity.end', (element)=>{
     executedTasksArr.push(...iotInputs);
     executedTasksArr.push(...iotOutputs);
   }
+
+  if(businessObj?.type === 'start' || businessObj?.type === 'catch' || businessObj?.type === 'throw') {
+    let type = "";
+    switch (businessObj.type){
+      case 'start':
+        type = "bpmn:IoTStartEvent";
+        break;
+      case 'catch':
+        type = "bpmn:IoTIntermediateCatchEvent";
+        break;
+      case 'throw':
+        type = "bpmn:IoTIntermediateThrowEvent";
+        break;
+    }
+
+    fillSidebar("1", element.name, new Date().getTime(), "EndTime", element.id, type, "", "", "", "");
+  } else {
+    if(businessObj?.type !== 'end') {
+      fillSidebar("1", element.name , new Date().getTime(), "EndTime", element.id, element.type, "", "", "", "");
+    }
+  }
+
 })
 
 const throwError = (api, id, msg) => {
@@ -586,7 +679,6 @@ const highlightErrorElements = (iotArtifact, waitObj, time, errormsg, source, bo
   }
   highlightElement(element, Color.red);
   let convertedTimeStamp = timestampToDate(waitObj.messageProperties.timestamp);
-  fillSidebar(errIcon, waitObj.name, waitObj.id, time, convertedTimeStamp, waitObj.type, errormsg, source);
 }
 
 const timestampToDate = (timestamp) => {
@@ -623,30 +715,41 @@ const scrollLogToBottom = () => {
 }
 
 
-function fillSidebar(state, name, id, time, timeStamp,type, errormsg, source) {
+
+
+
+function fillSidebar(processCase, label, timestamp, timestampType, id, type, connectedTo, responseValue, responseType, condition) {
   let table = document.getElementById("overlayTable").getElementsByTagName("tbody")[0];
   let tableLength = table.rows.length;
   let row = table.insertRow(tableLength);
   row.classList.add("text-center");
 
-  let stateCell = row.insertCell(0);
-  let nameCell = row.insertCell(1);
-  let idCell = row.insertCell(2);
-  let typeCell = row.insertCell(3);
-  let sourceCell = row.insertCell(4);
-  let startTimeCell = row.insertCell(5);
-  let executionTimeCell = row.insertCell(6);
-  let errorMsgCell = row.insertCell(7);
+  let caseCell = row.insertCell(0);
+  let labelCell = row.insertCell(1);
+  let timestampCell = row.insertCell(2);
+  let timestampTypeCell = row.insertCell(3);
+  let idCell = row.insertCell(4);
+  let typeCell  = row.insertCell(5);
+  let connectedToCell = row.insertCell(6);
+  let responseValueCell = row.insertCell(7);
+  let responseTypeCell = row.insertCell(8);
+  let conditionCell = row.insertCell(9);
 
 
-  stateCell.innerHTML = state;
-  nameCell.innerHTML = name ? name : '-';
+
+  caseCell.innerHTML = processCase;
+  labelCell.innerHTML = label ? label : '';
+  timestampCell.innerHTML = timestamp;
+  timestampTypeCell.innerHTML = timestampType;
   idCell.innerHTML = id;
   typeCell.innerHTML = type;
-  sourceCell.innerHTML = source;
-  startTimeCell.innerHTML = timeStamp;
-  executionTimeCell.innerHTML = time/1000 + " s";
-  errorMsgCell.innerHTML = errormsg;
+  connectedToCell.innerHTML = connectedTo
+  responseValueCell.innerHTML = responseValue;
+  responseTypeCell.innerHTML = responseType;
+  conditionCell.innerHTML = condition;
+
+
+  localStorage.setItem("log", localStorage.getItem("log") + "\n"+`${processCase};${label};${timestamp};${timestampType};${id};${type};${connectedTo};${responseValue};${responseType};${condition}`);
 }
 
 const addOverlays = (elem, time) => {
@@ -686,10 +789,20 @@ const resetView = () => {
 runBtn.addEventListener('click', (event)=>{
   document.getElementById("mySidebarLog").style.display = "block";
   resetView();
-
+  localStorage.setItem("log", 'Case;Label;Timestamp;TimestampType;ID;Type;ConnectedTo;ResponseValue;ResponseType;Condition');
   engine.execute({listener}).catch(e=>console.log(e));
 })
 
+document.getElementById('downloadLog').addEventListener('click', () => {
+
+  let encodedUri = encodeURIComponent(localStorage.getItem("log"));
+  let link = document.createElement("a");
+  link.setAttribute("href", 'data:text/plain;charset=utf-8,' + encodedUri);
+  link.setAttribute("download", "log_" + Date.now() +".csv");
+  document.body.appendChild(link); // Required for FF
+
+  link.click(); // This will download the data file named "my_data.csv".
+})
 
 document.getElementById('openbtn').addEventListener('click', (event)=>{
   document.getElementById("mySidebar").style.display = "block";
