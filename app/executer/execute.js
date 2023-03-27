@@ -480,19 +480,23 @@ listener.on('activity.wait', (waitObj) => {
           }
         });
       }
-      //TODO: handle obj the right way. Currently it acts as an actor
       if (businessObj.type === 'obj') {
+        let pool = workerpool.pool('/worker.js');
+        fillSidebar("1", businessObj.name, new Date().getTime(), "StartTime", businessObj.id, 'IoTObject', waitObj.id, "", "", "");
+
         console.log(businessObj)
-        let sensorArr = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:PropertiesSensor')[0].values;
-        let actuatorArr = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:PropertiesActuator')[0].values;
+        let sensorArr = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:PropertiesSensor')[0]?.values;
+        let actuatorArr = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:PropertiesActuator')[0]?.values;
         console.log(sensorArr);
         console.log(actuatorArr);
-        workerArr.push(
-            pool.exec('actorCall', [businessObj], {
+
+        sensorArr.forEach(value => {
+          if (value.url && value.key && value.name) {
+            let execElement = pool.exec('sensorObjGroup', [value.url, value.key, value.name], {
               on: payload => {
                 if(payload.responseForLog) {
                   const res = payload.responseForLog;
-                  fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, 'bpmn:ObjectArtifact' ,waitObj.id, res.responseValue || "", res.responseType || "", "");
+                  fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, res.type ,waitObj.id, res.responseValue || "", res.responseType || "", "");
                 } else {
                   fillSidebarRightLog(payload.status);
                 }
@@ -500,14 +504,52 @@ listener.on('activity.wait', (waitObj) => {
             }).then(result => {
               console.log("Result:");
               console.log(result);
-              highlightElement(output, Color.green_low_opacity);
+              if (result.value) {
+                waitObj.environment.variables[input.id] = {...waitObj.environment.variables[input.id], [value.name] : result.value };
+              }
+              highlightElement(input, Color.green_low_opacity);
               return result;
             }).catch(e => {
-              highlightErrorElements(output, waitObj, "Not executed", e, "-", boundaryEventType);
               console.log(e);
+              highlightErrorElements(input, waitObj, "Not executed", e, "-", boundaryEventType);
               throw e;
             })
-        )
+          } else {
+            console.log("SensorGroup: Key or URL incorrect / doesn't exist");
+          }
+        })
+        let execArray = [];
+        actuatorArr.forEach(value => {
+          let execElement = pool.exec('actorCallGroup', [value.url, value.method, businessObj], {
+            on: payload => {
+              if(payload.responseForLog) {
+                const res = payload.responseForLog;
+                fillSidebar(res.case, res.label, res.timestamp, res.timestampType, res.id, res.type ,waitObj.id, res.responseValue || "", res.responseType || "", "");
+              } else {
+                fillSidebarRightLog(payload.status);
+              }
+            }
+          }).then(result => {
+            console.log("Result:");
+            console.log(result);
+            return result;
+          }).catch(e => {
+            console.log(e);
+            throw e;
+          })
+          execArray.push(execElement);
+          workerArr.push(execElement);
+        })
+        Promise.allSettled(execArray).then((values) => {
+          pool.terminate(true);
+          let rejected = values.filter(val => val.status === 'rejected');
+          if (rejected.length === 0) {
+            fillSidebar("1", businessObj.name, new Date().getTime(), "EndTime", businessObj.id, 'IoTObject', waitObj.id, "", "", "");
+            highlightElement(output, Color.green_low_opacity);
+          } else {
+            highlightErrorElements(output, waitObj, "Not executed", "ActorGroup error", "-", boundaryEventType);
+          }
+        });
       }
     })
   }

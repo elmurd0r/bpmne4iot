@@ -5,8 +5,8 @@ import cmdHelper from "bpmn-js-properties-panel/lib/helper/CmdHelper";
 export default function(group, element, bpmnFactory, translate) {
     let propertiesEntry = properties(element, bpmnFactory, {
         id: 'IoTproperties-sensor',
-        modelProperties: [ 'url', 'key' ],
-        labels: [ translate('Url'), translate('Key')],
+        modelProperties: [ 'url', 'key', 'name' ],
+        labels: [ translate('Url'), translate('Key'), translate('Name')],
 
         getParent: function(element, node, bo) {
             return bo.extensionElements;

@@ -344,6 +344,43 @@ const sensorCatchArtefactGroup = (value, id, start_t, timeout) => {
     })
 }
 
+const sensorObjGroup = (url, key, name) => {
+    return new Promise((resolve, reject) => {
+
+        if (url && key) {
+            const axiosGet = () => {
+                axios.get(url).then((resp) => {
+                    let resVal = getResponseByAttributeAccessor(resp.data, key)
+                    if (!isNil(resVal)) {
+                        console.log(resVal);
+                        console.log("HTTP GET successfully completed");
+                        console.log('Name: ' + name + ', Value: ' + resVal);
+                        workerpool.workerEmit({status: "HTTP GET successfully completed"});
+                        workerpool.workerEmit({status: 'Name: ' + name + ', Value: ' + resVal});
+                        workerpool.workerEmit({responseForLog:  {'case': '1', 'label': name , 'timestamp': new Date().getTime(), 'timestampType': 'sensorValue' ,'id': "", 'type': 'bpmn:SensorArtifact', 'responseValue': resVal}})
+                        axiosGet();
+                    } else {
+                        console.log("Key not in response - IoT start");
+                        workerpool.workerEmit({status: "Key not in response - IoT start"});
+                    }
+                }).catch((e) => {
+                    console.log(e);
+                    console.log("Recursion axios error in input");
+                    workerpool.workerEmit({status: "Recursion axios error in input: " + e});
+                    reject(new Error(name));
+                });
+            }
+            axiosGet();
+        }
+        else {
+            console.log("Error in extensionsElement in IoT start");
+            workerpool.workerEmit({status: "Error in extensionsElement in IoT start"});
+            reject(new Error(name));
+        }
+    })
+}
+
+
 
 
 // create a worker and register public functions
@@ -353,5 +390,6 @@ workerpool.worker({
     sensorCallGroup: sensorCallGroup,
     actorCall: actorCall,
     actorCallGroup: actorCallGroup,
-    sensorCatchArtefactGroup: sensorCatchArtefactGroup
+    sensorCatchArtefactGroup: sensorCatchArtefactGroup,
+    sensorObjGroup: sensorObjGroup
 });
