@@ -482,6 +482,11 @@ listener.on('activity.wait', (waitObj) => {
       }
       //TODO: handle obj the right way. Currently it acts as an actor
       if (businessObj.type === 'obj') {
+        console.log(businessObj)
+        let sensorArr = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:PropertiesSensor')[0].values;
+        let actuatorArr = businessObj.extensionElements?.values.filter(element => element['$type'] === 'iot:PropertiesActuator')[0].values;
+        console.log(sensorArr);
+        console.log(actuatorArr);
         workerArr.push(
             pool.exec('actorCall', [businessObj], {
               on: payload => {

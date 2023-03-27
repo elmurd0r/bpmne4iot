@@ -1,5 +1,7 @@
 // Require your custom property entries.
-import spellProps from './parts/ValueProps';
+import iotGroupBuilder from './parts/properties/IoTGroupBuilder';
+import objSensorGroup from './parts/properties/ObjSensorGroupBuilder';
+import objActuatorGroup from './parts/properties/ObjActuatorGroupBuilder';
 
 let LOW_PRIORITY = 500;
 
@@ -8,19 +10,41 @@ let LOW_PRIORITY = 500;
 // The properties are organized in groups.
 function createIotTabGroups(element, bpmnFactory, elementRegistry, translate) {
 
-    // Create a group called "Black Magic".
-    let iotGroup = {
-        id: 'iot-group',
-        label: 'IoT Group',
-        entries: []
-    };
+    if(element?.businessObject?.type === "obj") {
 
-    // Add the spell props to the black magic group.
-    spellProps(iotGroup, element, bpmnFactory, translate);
+        let iotSensor = {
+            id: 'iot-sensor',
+            label: 'Sensor',
+            entries: []
+        };
+        let iotActuator = {
+            id: 'iot-actuator',
+            label: 'Actuator',
+            entries: []
+        };
+        objSensorGroup(iotSensor, element, bpmnFactory, translate);
+        objActuatorGroup(iotActuator, element, bpmnFactory, translate);
 
-    return [
-        iotGroup
-    ];
+        return [
+            iotSensor, iotActuator
+        ];
+
+    } else {
+
+        // Create a group called "Black Magic".
+        let iotGroup = {
+            id: 'iot-group',
+            label: 'IoT Group',
+            entries: []
+        };
+
+        // Add the spell props to the black magic group.
+        iotGroupBuilder(iotGroup, element, bpmnFactory, translate);
+
+        return [
+            iotGroup
+        ];
+    }
 }
 
 export default function IotPropertiesProvider(bpmnFactory, elementRegistry, propertiesPanel, translate) {

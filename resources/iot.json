@@ -72,6 +72,38 @@
       ]
     },
     {
+      "name": "PropertiesSensor",
+      "superClass": [
+        "Element"
+      ],
+      "meta": {
+        "allowedIn": [ "*" ]
+      },
+      "properties": [
+        {
+          "name": "values",
+          "type": "Property",
+          "isMany": true
+        }
+      ]
+    },
+    {
+      "name": "PropertiesActuator",
+      "superClass": [
+        "Element"
+      ],
+      "meta": {
+        "allowedIn": [ "*" ]
+      },
+      "properties": [
+        {
+          "name": "values",
+          "type": "Property",
+          "isMany": true
+        }
+      ]
+    },
+    {
       "name": "Properties",
       "superClass": [
         "Element"

@@ -3,7 +3,7 @@
 var getBusinessObject = require('bpmn-js/lib/util/ModelUtil').getBusinessObject,
     is = require('bpmn-js/lib/util/ModelUtil').is;
 
-var factory = require('./CustomIotEntryFactory');
+var factory = require('../CustomIotEntryFactory');
 
 var elementHelper = require('bpmn-js-properties-panel/lib/helper/ElementHelper'),
     extensionElementsHelper = require('bpmn-js-properties-panel/lib/helper/ExtensionElementsHelper'),
@@ -58,7 +58,7 @@ function getPropertiesElement(element) {
  */
 function getPropertiesElementInsideExtensionElements(extensionElements) {
     return find(extensionElements.values, function(elem) {
-        return is(elem, 'iot:Properties');
+        return is(elem, 'iot:PropertiesSensor');
     });
 }
 
@@ -85,7 +85,7 @@ function isExtensionElements(element) {
  * @param  {function} options.getParent Gets the parent business object
  * @param  {function} options.show Indicate when the entry will be shown, should return boolean
  */
-module.exports = function(iotType, element, bpmnFactory, options, translate) {
+module.exports = function(element, bpmnFactory, options, translate) {
     var getParent = options.getParent;
 
     var modelProperties = options.modelProperties,
@@ -100,13 +100,8 @@ module.exports = function(iotType, element, bpmnFactory, options, translate) {
     if (!bo) {
         return;
     }
-    if(iotType === 'sensor' || iotType === 'actor' || iotType === 'start' || iotType === 'catch' || iotType === 'throw' || iotType === 'artefact-catch' || iotType === 'end') {
-        if(bo.extensionElements?.values.some((e)=>e['$type'] === 'iot:Properties')) {
-            options.disableAddRow = true;
-        }
-    }
     assign(options, {
-        addLabel: translate('Add Property'),
+        addLabel: translate('Add Sensor'),
         getElements: function(element, node) {
             var parent = getParent(element, node, bo);
             return getPropertyValues(parent);
@@ -123,7 +118,7 @@ module.exports = function(iotType, element, bpmnFactory, options, translate) {
 
                 var properties = getPropertiesElement(parent);
                 if (!properties) {
-                    properties = elementHelper.createElement('iot:Properties', {}, parent, bpmnFactory);
+                    properties = elementHelper.createElement('iot:PropertiesSensor', {}, parent, bpmnFactory);
 
                     if (!isExtensionElements(parent)) {
                         commands.push(cmdHelper.updateBusinessObject(element, parent, { 'properties': properties }));
@@ -152,9 +147,6 @@ module.exports = function(iotType, element, bpmnFactory, options, translate) {
                 var property = elementHelper.createElement('iot:Property', propertyProps, properties, bpmnFactory);
                 commands.push(cmdHelper.addElementsTolist(element, properties, 'values', [ property ]));
 
-                if(iotType === 'sensor' || iotType === 'actor' || iotType === 'start' || iotType === 'catch' || iotType === 'throw' || iotType === 'artefact-catch' || iotType === 'end') {
-                    document.querySelector("div [data-entry='IoTproperties'] .add").disabled = true;
-                }
             return commands;
         },
         updateElement: function(element, value, node, idx) {
@@ -188,9 +180,6 @@ module.exports = function(iotType, element, bpmnFactory, options, translate) {
             }
         },
         removeElement: function(element, node, idx) {
-            if(iotType === 'sensor' || iotType === 'actor' || iotType === 'start' || iotType === 'catch' || iotType === 'throw' || iotType === 'artefact-catch' || iotType === 'end') {
-                document.querySelector("div [data-entry='IoTproperties'] .add").disabled = false;
-            }
             var commands = [],
                 parent = getParent(element, node, bo),
                 properties = getPropertiesElement(parent),
@@ -206,7 +195,7 @@ module.exports = function(iotType, element, bpmnFactory, options, translate) {
                     commands.push(cmdHelper.updateBusinessObject(element, parent, { properties: undefined }));
                 } else {
                     forEach(parent.values, function(value) {
-                        if (is(value, 'iot:Properties')) {
+                        if (is(value, 'iot:PropertiesSensor')) {
                             commands.push(extensionElementsHelper.removeEntry(bo, element, value));
                         }
                     });
